@@ -87,13 +87,21 @@ public:
          i < input_scan.ranges.size() && i < input_scan.intensities.size();
          i++)
     {
+      bool invalid_intensity = (filtered_scan.intensities[i] <= lower_threshold_ && filtered_scan.intensities[i] > 1) ||
+          filtered_scan.intensities[i] >= upper_threshold_;
+      bool invalid_range = filtered_scan.ranges[i] < 0.7 ;
+
+
       // Is this reading below our lower threshold?
       // Is this reading above our upper threshold?
-      if (filtered_scan.intensities[i] <= lower_threshold_ ||
-          filtered_scan.intensities[i] >= upper_threshold_)
+      if (invalid_range || invalid_intensity)
       {
         // If so, then make it an invalid value (NaN)
         filtered_scan.ranges[i] = std::numeric_limits<float>::quiet_NaN();
+      }
+      else if(filtered_scan.ranges[i] > 15)
+      {
+        filtered_scan.ranges[i] = 21;
       }
 
       // Calculate histogram
