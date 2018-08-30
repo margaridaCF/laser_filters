@@ -51,12 +51,29 @@ class LaserScanIntensityFilter : public filters::FilterBase<sensor_msgs::LaserSc
 {
 public:
 
+  // Intensity
   double lower_threshold_ ;
   double upper_threshold_ ;
   int disp_hist_ ;
   bool disp_hist_enabled_;
+  // Range
+  double lower_range_threshold_ ;
+  double upper_range_threshold_ ;
+  double upper_replacement_value_ ;
 
-  bool configure()
+  bool configureRange()
+  {
+    upper_replacement_value_ = 2000;
+    getParam("upper_replacement_value", upper_replacement_value_);
+
+    lower_range_threshold_ = 0.0;
+    upper_range_threshold_ = 100000.0;
+    getParam("lower_range_threshold", lower_range_threshold_);
+    getParam("upper_range_threshold", upper_range_threshold_) ;
+    return true;
+  }
+
+  bool configureIntensity()
   {
     lower_threshold_ = 8000.0;
     upper_threshold_ = 100000.0;
@@ -68,6 +85,11 @@ public:
     disp_hist_enabled_ = (disp_hist_ == 0) ? false : true;
 
     return true;
+  }
+
+  bool configure()
+  {
+    return configureIntensity() & configureRange();
   }
 
   virtual ~LaserScanIntensityFilter(){}
@@ -87,21 +109,19 @@ public:
          i < input_scan.ranges.size() && i < input_scan.intensities.size();
          i++)
     {
-      bool invalid_intensity = (filtered_scan.intensities[i] <= lower_threshold_ && filtered_scan.intensities[i] > 1) ||
-          filtered_scan.intensities[i] >= upper_threshold_;
-      bool invalid_range = filtered_scan.ranges[i] < 0.7 ;
-
-
       // Is this reading below our lower threshold?
       // Is this reading above our upper threshold?
+      bool invalid_intensity = (filtered_scan.intensities[i] <= lower_threshold_ && filtered_scan.intensities[i] > 1) ||
+          filtered_scan.intensities[i] >= upper_threshold_;
+      bool invalid_range = filtered_scan.ranges[i] < lower_range_threshold_ ;
       if (invalid_range || invalid_intensity)
       {
         // If so, then make it an invalid value (NaN)
         filtered_scan.ranges[i] = std::numeric_limits<float>::quiet_NaN();
       }
-      else if(filtered_scan.ranges[i] > 15)
+      else if(filtered_scan.ranges[i] > upper_range_threshold_)
       {
-        filtered_scan.ranges[i] = 21;
+        filtered_scan.ranges[i] = upper_replacement_value_;
       }
 
       // Calculate histogram
