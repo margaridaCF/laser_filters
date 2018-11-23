@@ -127,9 +127,9 @@ public:
     filter_.setTolerance(ros::Duration(tf_tolerance_));
 
     if (using_scan_topic_deprecated_)
-      sub_.subscribe(nh, scan_topic_, 50);
+      sub_.subscribe(nh, scan_topic_, 50, ros::TransportHints().tcpNoDelay());
     else
-      sub_.subscribe(nh, "scan", 50);
+      sub_.subscribe(nh, "scan", 50, ros::TransportHints().tcpNoDelay());
 
     filter_.connectInput(sub_);
 
